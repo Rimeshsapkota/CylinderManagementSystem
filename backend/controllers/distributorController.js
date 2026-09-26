@@ -12,13 +12,26 @@ exports.createDistributor = async (req, res) => {
 };
 
 exports.getAllDistributors = async (req, res) => {
-  try {
-    const distributors = await Distributor.find();
-    res.json(distributors);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+  
+      const [distributors, total] = await Promise.all([
+        Distributor.find().skip(skip).limit(limit).sort({ createdAt: -1 }),
+        Distributor.countDocuments()
+      ]);
+  
+      res.json({
+        data: distributors,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
 
 exports.getDistributorById = async (req, res) => {
   try {

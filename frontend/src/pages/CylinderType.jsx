@@ -1,28 +1,36 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import DataTable from "../component/DataTable";
+import Pagination from "../component/Pagination";
 
 export default function CylinderTypes() {
   const [types, setTypes] = useState([]);
   const [form, setForm] = useState({ size: "", unit: "kg" });
   const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchTypes = async () => {
-    const res = await api.get("/cylinder-types");
-    setTypes(res.data);
+  const fetchTypes = async (pageNum = page) => {
+    const res = await api.get(`/cylinder-types?page=${pageNum}&limit=10`);
+    setTypes(res.data.data);
+    setTotalPages(res.data.totalPages);
   };
 
   useEffect(() => {
     let ignore = false;
 
     (async () => {
-      const res = await api.get("/cylinder-types");
-      if (!ignore) setTypes(res.data);
+      const res = await api.get(`/cylinder-types?page=${page}&limit=10`);
+      if (!ignore) {
+        setTypes(res.data.data);
+        setTotalPages(res.data.totalPages);
+      }
     })();
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [page]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -104,41 +112,49 @@ export default function CylinderTypes() {
         )}
       </form>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left border-bottom-2 surface-border">
-            <th className="p-2">Size</th>
-            <th className="p-2">Unit</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-  {types.map((t) => (
-    <tr key={t._id} className="border-bottom-1 surface-border">
-      <td className="p-2">{t.size}</td>
-      <td className="p-2">{t.unit}</td>
-      <td className="p-2 flex gap-2">
-        <button
-          className="p-2 border-round border-none text-white cursor-pointer flex align-items-center justify-content-center"
-          style={{ background: "#3b82f6", width: "36px", height: "36px" }}
-          onClick={() => handleEdit(t)}
-          title="Edit"
-        >
-          <i className="pi pi-pencil"></i>
-        </button>
-        <button
-          className="p-2 border-round border-none text-white cursor-pointer flex align-items-center justify-content-center"
-          style={{ background: "#ef4444", width: "36px", height: "36px" }}
-          onClick={() => handleDelete(t._id)}
-          title="Delete"
-        >
-          <i className="pi pi-trash"></i>
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-      </table>
+      <DataTable
+        columns={[
+          { key: "size", label: "Size" },
+          { key: "unit", label: "Unit" },
+          {
+            key: "actions",
+            label: "Actions",
+            render: (t) => (
+              <div className="flex gap-2">
+                <button
+                  className="border-none bg-transparent cursor-pointer flex align-items-center justify-content-center"
+                  style={{
+                    color: "#3b82f6",
+                    fontSize: "18px",
+                    width: "36px",
+                    height: "36px",
+                  }}
+                  onClick={() => handleEdit(t)}
+                  title="Edit"
+                >
+                  <i className="pi pi-pencil"></i>
+                </button>
+                <button
+                  className="border-none bg-transparent cursor-pointer flex align-items-center justify-content-center"
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "18px",
+                    width: "36px",
+                    height: "36px",
+                  }}
+                  onClick={() => handleDelete(t._id)}
+                  title="Delete"
+                >
+                  <i className="pi pi-trash"></i>
+                </button>
+              </div>
+            ),
+          },
+        ]}
+        data={types}
+      />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

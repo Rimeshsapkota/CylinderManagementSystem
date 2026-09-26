@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import DataTable from "../component/DataTable";
+import Pagination from "../component/Pagination";
+import FormModal from "../component/Form/FormModal";
+import FormField from "../component/Form/FormField";
+import FormActions from "../component/Form/FormActions";
 
 const initialForm = {
   name: "",
@@ -13,24 +18,31 @@ export default function Distributors() {
   const [distributors, setDistributors] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchDistributors = async () => {
-    const res = await api.get("/distributors");
-    setDistributors(res.data);
+  const fetchDistributors = async (pageNum = page) => {
+    const res = await api.get(`/distributors?page=${pageNum}&limit=10`);
+    setDistributors(res.data.data);
+    setTotalPages(res.data.totalPages);
   };
 
   useEffect(() => {
     let ignore = false;
 
     (async () => {
-      const res = await api.get("/distributors");
-      if (!ignore) setDistributors(res.data);
+      const res = await api.get(`/distributors?page=${page}&limit=10`);
+      if (!ignore) {
+        setDistributors(res.data.data);
+        setTotalPages(res.data.totalPages);
+      }
     })();
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [page]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,6 +65,7 @@ export default function Distributors() {
       }
       setForm(initialForm);
       setEditingId(null);
+      setShowForm(false);
       fetchDistributors();
     } catch (err) {
       alert(err.response?.data?.error || "Something went wrong");
@@ -67,11 +80,12 @@ export default function Distributors() {
       location: {
         district: d.location?.district || "",
         municipality: d.location?.municipality || "",
-        ward: d.location?.ward || ""
+        ward: d.location?.ward || "",
       },
-      contact: d.contact || ""
+      contact: d.contact || "",
     });
     setEditingId(d._id);
+    setShowForm(true);
   };
 
   const handleDelete = async (id) => {
@@ -80,149 +94,150 @@ export default function Distributors() {
     fetchDistributors();
   };
 
+  const handleAddNew = () => {
+    setForm(initialForm);
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setForm(initialForm);
+    setEditingId(null);
+    setShowForm(false);
+  };
+
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Distributor Management</h2>
+      <div className="flex justify-content-between align-items-center mb-4">
+        <h2 className="text-2xl font-bold">Distributor Management</h2>
+        {!showForm && (
+          <button
+            className="p-2 px-3 border-round text-white border-none cursor-pointer flex align-items-center gap-2"
+            style={{ background: "#3b82f6" }}
+            onClick={handleAddNew}
+          >
+            <i className="pi pi-plus"></i>
+            Add Distributor
+          </button>
+        )}
+      </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-wrap gap-3 mb-5 align-items-end"
-      >
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Name</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
+      {showForm && (
+        <FormModal
+          title={editingId ? "Edit Distributor" : "New Distributor"}
+          onClose={handleCancel}
+          onSubmit={handleSubmit}
+        >
+          <FormField
+            label="Name"
             name="name"
             value={form.name}
             onChange={handleChange}
             required
           />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Proprietor Name</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
+          <FormField
+            label="Proprietor Name"
             name="proprietorName"
             value={form.proprietorName}
             onChange={handleChange}
           />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Phone</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
+          <FormField
+            label="Phone"
             name="phone"
             value={form.phone}
             onChange={handleChange}
           />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">District</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
-            name="district"
-            value={form.location.district}
-            onChange={handleLocationChange}
-            required
-          />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Municipality</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
-            name="municipality"
-            value={form.location.municipality}
-            onChange={handleLocationChange}
-          />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Ward</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            style={{ width: "70px" }}
-            type="text"
-            name="ward"
-            value={form.location.ward}
-            onChange={handleLocationChange}
-          />
-        </div>
-        <div className="flex flex-column gap-1">
-          <label className="text-sm font-medium">Contact</label>
-          <input
-            className="p-2 border-1 border-round surface-border"
-            type="text"
+
+          <div className="flex gap-3">
+            <FormField
+              label="District"
+              name="district"
+              value={form.location.district}
+              onChange={handleLocationChange}
+              required
+              style={{ flex: 1 }}
+            />
+            <FormField
+              label="Municipality"
+              name="municipality"
+              value={form.location.municipality}
+              onChange={handleLocationChange}
+              style={{ flex: 1 }}
+            />
+            <FormField
+              label="Ward"
+              name="ward"
+              value={form.location.ward}
+              onChange={handleLocationChange}
+              style={{ width: "80px" }}
+            />
+          </div>
+
+          <FormField
+            label="Contact"
             name="contact"
             value={form.contact}
             onChange={handleChange}
           />
-        </div>
-        <button
-          type="submit"
-          className="p-2 px-3 border-round text-white border-none cursor-pointer"
-          style={{ background: "#3b82f6" }}
-        >
-          {editingId ? "Update" : "Add"} Distributor
-        </button>
-        {editingId && (
-          <button
-            type="button"
-            className="p-2 px-3 border-round cursor-pointer"
-            onClick={() => {
-              setEditingId(null);
-              setForm(initialForm);
-            }}
-          >
-            Cancel
-          </button>
-        )}
-      </form>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left border-bottom-2 surface-border">
-            <th className="p-2">Name</th>
-            <th className="p-2">District</th>
-            <th className="p-2">Municipality</th>
-            <th className="p-2">Ward</th>
-            <th className="p-2">Contact</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-  {distributors.map((d) => (
-    <tr key={d._id} className="border-bottom-1 surface-border">
-      <td className="p-2">{d.name}</td>
-      <td className="p-2">{d.location?.district}</td>
-      <td className="p-2">{d.location?.municipality}</td>
-      <td className="p-2">{d.location?.ward}</td>
-      <td className="p-2">{d.contact}</td>
-      <td className="p-2 flex gap-2">
-        <button
-          className="p-2 border-round border-none text-white cursor-pointer flex align-items-center justify-content-center"
-          style={{ background: "#3b82f6", width: "36px", height: "36px" }}
-          onClick={() => handleEdit(d)}
-          title="Edit"
-        >
-          <i className="pi pi-pencil"></i>
-        </button>
-        <button
-          className="p-2 border-round border-none text-white cursor-pointer flex align-items-center justify-content-center"
-          style={{ background: "#ef4444", width: "36px", height: "36px" }}
-          onClick={() => handleDelete(d._id)}
-          title="Delete"
-        >
-          <i className="pi pi-trash"></i>
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-      </table>
+          <FormActions onCancel={handleCancel} isEditing={!!editingId} />
+        </FormModal>
+      )}
+      <DataTable
+        columns={[
+          { key: "name", label: "Name" },
+          { key: "proprietorName", label: "Proprietor" },
+          { key: "phone", label: "Phone" },
+          {
+            key: "district",
+            label: "District",
+            render: (d) => d.location?.district,
+          },
+          {
+            key: "municipality",
+            label: "Municipality",
+            render: (d) => d.location?.municipality,
+          },
+          { key: "ward", label: "Ward", render: (d) => d.location?.ward },
+          {
+            key: "actions",
+            label: "Actions",
+            render: (d) => (
+              <div className="flex gap-2">
+                <button
+                  className="border-none bg-transparent cursor-pointer flex align-items-center justify-content-center"
+                  style={{
+                    color: "#3b82f6",
+                    fontSize: "18px",
+                    width: "36px",
+                    height: "36px",
+                  }}
+                  onClick={() => handleEdit(d)}
+                  title="Edit"
+                >
+                  <i className="pi pi-pencil"></i>
+                </button>
+                <button
+                  className="border-none bg-transparent cursor-pointer flex align-items-center justify-content-center"
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "18px",
+                    width: "36px",
+                    height: "36px",
+                  }}
+                  onClick={() => handleDelete(d._id)}
+                  title="Delete"
+                >
+                  <i className="pi pi-trash"></i>
+                </button>
+              </div>
+            ),
+          },
+        ]}
+        data={distributors}
+      />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

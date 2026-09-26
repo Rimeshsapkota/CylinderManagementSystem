@@ -11,8 +11,21 @@ exports.createCylinderType = async (req, res) => {
 
 exports.getAllCylinderTypes = async (req, res) => {
   try {
-    const types = await CylinderType.find();
-    res.json(types);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [types, total] = await Promise.all([
+      CylinderType.find().skip(skip).limit(limit).sort({ createdAt: -1 }),
+      CylinderType.countDocuments()
+    ]);
+
+    res.json({
+      data: types,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

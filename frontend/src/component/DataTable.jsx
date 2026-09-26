@@ -1,4 +1,4 @@
-export default function DataTable({ columns, data, emptyMessage = "No records found." }) {
+export default function DataTable({ columns, data = [], emptyMessage = "No records found." }) {
   return (
     <table className="w-full border-collapse" style={{ border: "1px solid #cbd5e1" }}>
       <thead>
