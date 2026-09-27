@@ -19,9 +19,8 @@ export default function Dashboard() {
 
   if (!summary) return <div className="p-4">Loading...</div>;
 
-  const { brandCount, distributorCount, totalSold, salesRegister = [] } = summary;
+  const { brandCount, distributorCount, salesRegister = [] } = summary;
 
-  // unique district list for the dropdown
   const districts = [...new Set(
     salesRegister
       .map((s) => s.distributor?.location?.district)
@@ -46,6 +45,8 @@ export default function Dashboard() {
 
   const filteredTotal = filtered.reduce((sum, s) => sum + s.quantity, 0);
 
+  const isFiltering = search || district || fromDate || toDate;
+
   const clearFilters = () => {
     setSearch("");
     setDistrict("");
@@ -57,11 +58,12 @@ export default function Dashboard() {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Sales Register</h2>
 
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <SummaryCard label="Brands" value={brandCount} color="#3b82f6" />
-        <SummaryCard label="Dealers" value={distributorCount} color="#10b981" />
-        <SummaryCard label="Total Sold" value={totalSold} color="#ef4444" />
-        <SummaryCard label="Filtered Total" value={filteredTotal} color="#f59e0b" />
+      <div className="flex gap-4 mb-5 flex-wrap">
+        <CircleStat label="Brands" value={brandCount} color="#3b82f6" />
+        <CircleStat label="Dealers" value={distributorCount} color="#10b981" />
+        {isFiltering && (
+          <CircleStat label="Filtered Qty" value={filteredTotal} color="#f59e0b" />
+        )}
       </div>
 
       <div
@@ -114,12 +116,14 @@ export default function Dashboard() {
           />
         </div>
 
-        <button
-          className="p-2 px-3 border-round cursor-pointer"
-          onClick={clearFilters}
-        >
-          Clear Filters
-        </button>
+        {isFiltering && (
+          <button
+            className="p-2 px-3 border-round cursor-pointer"
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       <table className="w-full border-collapse">
@@ -163,11 +167,22 @@ export default function Dashboard() {
   );
 }
 
-function SummaryCard({ label, value, color }) {
+function CircleStat({ label, value, color }) {
   return (
-    <div className="p-3 border-round text-white flex flex-column gap-1" style={{ background: color, minWidth: "160px" }}>
-      <span className="text-sm">{label}</span>
-      <span className="text-3xl font-bold">{value}</span>
+    <div className="flex flex-column align-items-center gap-2">
+      <div
+        className="flex align-items-center justify-content-center text-white font-bold"
+        style={{
+          width: "100px",
+          height: "100px",
+          borderRadius: "50%",
+          background: color,
+          fontSize: "1.5rem"
+        }}
+      >
+        {value}
+      </div>
+      <span className="text-sm font-medium">{label}</span>
     </div>
   );
 }
