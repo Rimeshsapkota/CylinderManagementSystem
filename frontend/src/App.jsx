@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Layout from "./component/Layout";
+import ProtectedRoute from "./component/ProtectedRoute";
+
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
 import Brand from "./pages/Brand";
 import CylinderTypes from "./pages/CylinderType";
 import Distributors from "./pages/Distributors";
@@ -13,11 +17,53 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/brands" element={<Brand />} />
-          <Route path="/cylinder-types" element={<CylinderTypes />} />
-          <Route path="/distributors" element={<Distributors />} />
-          <Route path="/imports" element={<Imports />} />
-          <Route path="/stock" element={<Stock />} />
+
+          <Route path="/login" element={<Login />} />
+
+          <Route
+            path="/brands"
+            element={
+              <ProtectedRoute>
+                <Brand />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cylinder-types"
+            element={
+              <ProtectedRoute>
+                <CylinderTypes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/distributors"
+            element={
+              <ProtectedRoute>
+                <Distributors />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/imports"
+            element={
+              <ProtectedRoute>
+                <Imports />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/stock"
+            element={
+              <ProtectedRoute>
+                <Stock />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Layout>
     </BrowserRouter>

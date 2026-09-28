@@ -38,6 +38,19 @@ export default function Sidebar() {
           {link.label}
         </NavLink>
       ))}
+
+<button
+  className="p-2 border-round border-none cursor-pointer mt-4"
+  onClick={() => {
+    localStorage.removeItem("token");
+    window.location.assign("/");
+  }}
+>
+  Logout
+</button>
     </div>
+
+    
   );
+  
 }
