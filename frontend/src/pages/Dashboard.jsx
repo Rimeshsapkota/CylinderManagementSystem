@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import DataTable from "../component/DataTable";
+import Pagination from "../component/Pagination";
+
+const PAGE_SIZE = 10;
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -7,6 +11,7 @@ export default function Dashboard() {
   const [district, setDistrict] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let ignore = false;
@@ -44,14 +49,21 @@ export default function Dashboard() {
   });
 
   const filteredTotal = filtered.reduce((sum, s) => sum + s.quantity, 0);
-
   const isFiltering = search || district || fromDate || toDate;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const clearFilters = () => {
     setSearch("");
     setDistrict("");
     setFromDate("");
     setToDate("");
+    setPage(1);
+  };
+
+  const handleFilterChange = (setter) => (value) => {
+    setter(value);
+    setPage(1);
   };
 
   return (
@@ -77,7 +89,7 @@ export default function Dashboard() {
             style={{ width: "220px" }}
             placeholder="Search..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleFilterChange(setSearch)(e.target.value)}
           />
         </div>
 
@@ -87,7 +99,7 @@ export default function Dashboard() {
             className="p-2 border-1 border-round surface-border"
             style={{ width: "180px" }}
             value={district}
-            onChange={(e) => setDistrict(e.target.value)}
+            onChange={(e) => handleFilterChange(setDistrict)(e.target.value)}
           >
             <option value="">All Districts</option>
             {districts.map((d) => (
@@ -102,7 +114,7 @@ export default function Dashboard() {
             className="p-2 border-1 border-round surface-border"
             type="date"
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            onChange={(e) => handleFilterChange(setFromDate)(e.target.value)}
           />
         </div>
 
@@ -112,7 +124,7 @@ export default function Dashboard() {
             className="p-2 border-1 border-round surface-border"
             type="date"
             value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+            onChange={(e) => handleFilterChange(setToDate)(e.target.value)}
           />
         </div>
 
@@ -126,43 +138,30 @@ export default function Dashboard() {
         )}
       </div>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left border-bottom-2 surface-border">
-            <th className="p-2">S.N.</th>
-            <th className="p-2">Sales Date</th>
-            <th className="p-2">Dealer</th>
-            <th className="p-2">Proprietor</th>
-            <th className="p-2">Phone</th>
-            <th className="p-2">Address</th>
-            <th className="p-2">District</th>
-            <th className="p-2">Brand</th>
-            <th className="p-2">Quantity</th>
-            <th className="p-2">Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.length === 0 && (
-            <tr>
-              <td className="p-2" colSpan={10}>No records found.</td>
-            </tr>
-          )}
-          {filtered.map((s, i) => (
-            <tr key={s._id} className="border-bottom-1 surface-border">
-              <td className="p-2">{i + 1}</td>
-              <td className="p-2">{new Date(s.date).toLocaleDateString()}</td>
-              <td className="p-2">{s.distributor?.name}</td>
-              <td className="p-2">{s.distributor?.proprietorName}</td>
-              <td className="p-2">{s.distributor?.phone}</td>
-              <td className="p-2">{s.distributor?.location?.municipality}</td>
-              <td className="p-2">{s.distributor?.location?.district}</td>
-              <td className="p-2">{s.brand?.name}</td>
-              <td className="p-2 font-bold">{s.quantity}</td>
-              <td className="p-2">{s.remarks}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable
+        columns={[
+          {
+            key: "date",
+            label: "Sales Date",
+            render: (s) => new Date(s.date).toLocaleDateString(),
+          },
+          { key: "dealer", label: "Dealer", render: (s) => s.distributor?.name },
+          { key: "proprietor", label: "Proprietor", render: (s) => s.distributor?.proprietorName },
+          { key: "phone", label: "Phone", render: (s) => s.distributor?.phone },
+          { key: "address", label: "Address", render: (s) => s.distributor?.location?.municipality },
+          { key: "district", label: "District", render: (s) => s.distributor?.location?.district },
+          { key: "brand", label: "Brand", render: (s) => s.brand?.name },
+          {
+            key: "quantity",
+            label: "Quantity",
+            render: (s) => <span className="font-bold">{s.quantity}</span>,
+          },
+          { key: "remarks", label: "Remarks" },
+        ]}
+        data={paginated}
+      />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
