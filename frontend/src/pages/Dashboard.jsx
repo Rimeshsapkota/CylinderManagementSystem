@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [search, setSearch] = useState("");
   const [district, setDistrict] = useState("");
+  const [brand, setBrand] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
@@ -32,6 +33,12 @@ export default function Dashboard() {
       .filter(Boolean)
   )];
 
+  const brands = [...new Set(
+    salesRegister
+      .map((s) => s.brand?.name)
+      .filter(Boolean)
+  )];
+
   const filtered = salesRegister.filter((s) => {
     const matchesSearch =
       s.distributor?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -41,21 +48,24 @@ export default function Dashboard() {
       ? s.distributor?.location?.district === district
       : true;
 
+    const matchesBrand = brand ? s.brand?.name === brand : true;
+
     const txnDate = new Date(s.date);
     const matchesFrom = fromDate ? txnDate >= new Date(fromDate) : true;
     const matchesTo = toDate ? txnDate <= new Date(toDate) : true;
 
-    return matchesSearch && matchesDistrict && matchesFrom && matchesTo;
+    return matchesSearch && matchesDistrict && matchesBrand && matchesFrom && matchesTo;
   });
 
   const filteredTotal = filtered.reduce((sum, s) => sum + s.quantity, 0);
-  const isFiltering = search || district || fromDate || toDate;
+  const isFiltering = search || district || brand || fromDate || toDate;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const clearFilters = () => {
     setSearch("");
     setDistrict("");
+    setBrand("");
     setFromDate("");
     setToDate("");
     setPage(1);
@@ -104,6 +114,21 @@ export default function Dashboard() {
             <option value="">All Districts</option>
             {districts.map((d) => (
               <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-column gap-1">
+          <label className="text-sm font-medium">Brand</label>
+          <select
+            className="p-2 border-1 border-round surface-border"
+            style={{ width: "180px" }}
+            value={brand}
+            onChange={(e) => handleFilterChange(setBrand)(e.target.value)}
+          >
+            <option value="">All Brands</option>
+            {brands.map((b) => (
+              <option key={b} value={b}>{b}</option>
             ))}
           </select>
         </div>
